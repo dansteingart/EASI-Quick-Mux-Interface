@@ -1,79 +1,80 @@
+//Imports
 var express = require('express'); // Web Interface Stuff
 var bodyParser = require('body-parser')
 var cors = require('cors')
-
-var sleep = require('sleep');     // Sleep for Pulser. If Interface is slow this is likely why
+var sleep = require('sleep'); // Sleep for Pulser. If Interface is slow this is likely why
 var request = require('urllib-sync').request; // For talking to forwarder
 var app = express();
+var mkdirp = require('mkdirp');
+var jsonfile = require('jsonfile')
+var mongojs = require('mongojs')
 
-app.use(cors());
-app.use( bodyParser.json() );       // to support JSON-encoded bodies
-app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
-  extended: true
-}));
+
 
 //Replace Later with ARGV
+mongo = "192.81.219.77"
 pulser_site = "http://25.133.238.121:9003"
-mux_site    = "http://25.133.238.121:9002"
+mux_site = "http://25.133.238.121:9002"
+source = "mac_mini_129_2"
+inid = "mux1"
+db = mongojs(mongo + "/test_db")
 
-function write_mux(msg)
-{
-    wsite = mux_site+"/write/"+msg
+//Define Functions
+function write_mux(msg) {
+    wsite = mux_site + "/write/" + msg
     var res = request(wsite);
     sleep.usleep(50000);
     return res['data'].toString()
 }
 
-function write_pulser(msg)
-{
-    wsite = pulser_site+"/writecf/"+msg 
+function write_pulser(msg) {
+    wsite = pulser_site + "/writecf/" + msg
     var res = request(wsite);
     sleep.usleep(50000);
     return res['data'].toString()
 }
 
-function read_pulser()
-{
-    rsite = pulser_site+"/read/" 
+function read_pulser() {
+    rsite = pulser_site + "/read/"
     var res = request(rsite);
     //get last datapoimt
-    return res['data'].toString().split("\r\n").slice(-3,-2)[0];
+    return res['data'].toString().split("\r\n").slice(-3, -2)[0];
 }
 
-function check_pulser_ok()
-{
-    rsite = pulser_site+"/read/"
+function check_pulser_ok() {
+    rsite = pulser_site + "/read/"
     var res = request(rsite);
     foo = res['data'].toString().slice(-4)
     return foo == "OK\r\n";
 }
 
-function read_mux()
-{
-    rsite = mux_site+"/read/" 
+function read_mux() {
+    rsite = mux_site + "/read/"
     var res = request(rsite);
     //get last element
-    return res['data'].toString().split("\n").slice(-3,-2)[0];
+    return res['data'].toString().split("\n").slice(-3, -2)[0];
 }
 
-function process_waveform(wave)
-{
+function process_waveform(wave) {
     first = []
     second = []
     wave = wave.split(")(")
     pairs = []
-    for (w in wave) {pairs.push(wave[w].replace(/(\(|\))/g,"").split(","))}
-    for (p in pairs){first.push(parseInt(pairs[p][0],16));second.push(parseInt(pairs[p][1],16))};
-    return [first,second]
+    for (w in wave) {
+        pairs.push(wave[w].replace(/(\(|\))/g, "").split(","))
+    }
+    for (p in pairs) {
+        first.push(parseInt(pairs[p][0], 16));
+        second.push(parseInt(pairs[p][1], 16))
+    };
+    return [first, second]
 }
 
-function get_waveform()
-{
+function get_waveform() {
     write_pulser("param_WaveForm?");
     watchdog = 0
     sleep.usleep(100000)
-    while ((check_pulser_ok() == false ) & (watchdog < 20) )
-    {
+    while ((check_pulser_ok() == false) & (watchdog < 20)) {
         sleep.usleep(200000)
         watchdog = watchdog + 1;
     }
@@ -82,62 +83,131 @@ function get_waveform()
     else return "pusler timed out"
 }
 
-function mux_commander(msg)
-{
+function mux_commander(msg) {
     out = ""
     write_mux(out)
 
-    if (msg['TransmissionMode'].toLocaleLowerCase == "pe")      out = msg['Channel1']
-    else if (msg['TransmissionMode'].toLocaleLowerCase == "tr") out = msg['Channel1']+","+msg['Channel2']
+    if (msg['TransmissionMode'].toLocaleLowerCase == "pe") out = msg['Channel1']
+    else if (msg['TransmissionMode'].toLocaleLowerCase == "tr") out = msg['Channel1'] + "," + msg['Channel2']
 
     write_mux(out)
     sleep.usleep(100000)
 }
 
-function epoch_commander(msg)
-{
+function epoch_commander(msg) {
     keys = []
     for (k in msg) keys.push(k)
 
     msgo = msg
-    if (msgo['TransmissionMode'].toLowerCase() == "pe") msgo['TransmissionMode'] = 0
-    else if (msgo['TransmissionMode'].toLowerCase() == "tr") msgo['TransmissionMode'] = 2
+    if (msgo['TransmissionMode'].toLowerCase() == "pe") msgo['TransmissionModeNo'] = 0
+    else if (msgo['TransmissionMode'].toLowerCase() == "tr") msgo['TransmissionModeNo'] = 2
 
-    available = "Freq,Range,TransmissionMode,BaseGain,FilterStandard,Delay"
+    available = "Freq,Range,TransmissionModeNo,BaseGain,FilterStandard,Delay"
 
-    for (k in keys)
-    {
-            kk = keys[k]
-            if (available.search(kk) > 0); write_pulser("param_"+kk+"="+msgo[kk] )
+    for (k in keys) {
+        kk = keys[k]
+        if (available.search(kk) > 0) write_pulser("param_" + kk + "=" + msgo[kk]);
     }
 
-    msg['amp'] = get_waveform();
-
+    msg['amp'] = get_waveform()[0];
+    msg['dtus'] = msg['Range'] / 495
     return msg;
 
 }
 
-function shot(msg)
-{
-    mux_commander(msg);
-    msg = epoch_commander(msg);
+function shot(msg) {
+
+    msg['source'] = source
+    msg['inid'] = inid
+    if (msg['Run'].toLowerCase() == 'y') {
+        mux_commander(msg);
+        msg = epoch_commander(msg);
+        msg['_id'] = parseInt(Date.now() / 1000)
+
+        if (msg['Name'] != undefined) {
+            console.log(msg['Name'])
+            msg['run'] = msg['Name'] + "_" + msg['TransmissionMode']
+
+            //Save local file
+            dd = new Date().toISOString().slice(0, 10)
+            dd = "data-" + dd
+            ddd = "data/" + dd
+            mkdirp.sync(ddd)
+            fn = ddd + "/" + msg['run'] + "_" + msg['_id'] + ".json"
+            jsonfile.writeFileSync(fn, msg)
+
+            //Then push to the db
+            try {
+                db.collection("acoustic_data").insert(msg)
+            } catch (e) {
+                console.log(e)
+            }
+
+        }
+
+    }
     return msg
 }
-app.post("/singleshot/",function(req,res){res.send(shot(req.body));})
 
-app.post("/settings/",function(req,res){res.send("temp");})
+function save_table(msg) {
+    fn = "settings_table.json"
+    jsonfile.writeFileSync(fn, msg)
+    msg['success'] = true
+    return msg
+}
 
-app.get("/",function(req,res){res.send("What you talkin' bout Willis?")})
-
-app.get("/last_from_pulser/",function(req,res){res.send(read_pulser());})
-
-app.get("/last_from_mux/",function(req,res){res.send(read_pulser());})
- 
-app.get('/write_to_pulser/*', function (req, res) {res.send(write_pulser(req['originalUrl'].split("/").slice(-1)) ) });
-
-app.get('/write_to_mux/*', function (req, res) {res.send(write_mux(req['originalUrl'].split("/").slice(-1)) ) });
-
-app.listen(3000, function () {console.log('Example app listening on port 3000!');});
+function load_table() {
+    fn = "settings_table.json"
+    msg = jsonfile.readFileSync(fn)
+    return msg
+}
 
 
+//Web Portion
+app.use(cors());
+app.use(bodyParser.json()); // to support JSON-encoded bodies
+app.use(bodyParser.urlencoded({ // to support URL-encoded bodies
+    extended: true
+}));
 
+app.post("/singleshot/", function (req, res) {
+    res.send(shot(req.body));
+})
+
+app.post("/settings/", function (req, res) {
+    res.send("temp");
+})
+
+app.get("/", function (req, res) {
+    res.send("What you talkin' bout Willis?")
+})
+
+app.get("/last_from_pulser/", function (req, res) {
+    res.send(read_pulser());
+})
+
+app.get("/last_from_mux/", function (req, res) {
+    res.send(read_mux());
+})
+
+app.get('/write_to_pulser/*', function (req, res) {
+    res.send(write_pulser(req['originalUrl'].split("/").slice(-1)))
+});
+
+app.get('/write_to_mux/*', function (req, res) {
+    res.send(write_mux(req['originalUrl'].split("/").slice(-1)))
+});
+
+app.post('/table_save/', function (req, res) {
+    res.send(save_table(req.body));
+});
+
+app.post('/table_load/', function (req, res) {
+    res.send(load_table());
+});
+
+
+
+app.listen(3000, function () {
+    console.log('Example app listening on port 3000!');
+});
