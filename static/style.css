@@ -1,0 +1,105 @@
+
+
+.table-editable {
+  position: relative;
+outline: 0px;
+
+}
+.table-editable .glyphicon {
+  font-size: 15px;
+}
+
+.table-remove {
+  color: #000;
+  cursor: pointer;
+}
+.table-remove:hover {
+  color: #f00;
+}
+
+.test-start, .test-stop {
+  color: #000;
+  cursor: pointer;
+}
+
+.test-start:hover {
+  color: #0f0;
+}
+
+.test-stop:hover {
+  color: #f00;
+}
+
+.table-up, .table-down {
+  color: #000;
+  cursor: pointer;
+}
+.table-up:hover, .table-down:hover {
+  color: #00f;
+}
+
+.table-add {
+  color: #000;
+  cursor: pointer;
+  position: absolute;
+  top: 8px;
+  right: 0;
+}
+.table-add:hover {
+  color: #0f0;
+}
+
+td
+{
+    outline: 0px solid transparent
+}
+
+td:hover
+{
+    background: #EEE;
+}
+
+
+input
+{
+    outline: 0px solid transparent;
+    border: 0px;
+    border-bottom: 1px solid silver;
+    width: 50px;
+    text-align:center;
+
+}
+
+input:hover
+{
+    background: pink;
+}
+
+input:focus
+{
+    background: lightyellow;
+}
+
+.btn-primary
+{
+    outline: 0px solid transparent;
+    color:white;
+    background:black;
+    border: 0px solid transparent;
+
+}
+
+.btn-primary:hover
+{
+  background:grey;
+}
+
+.btn-primary:active
+{
+  background:lightgreen;
+}
+
+[contenteditable="true"]:focus
+{
+    background:lightyellow;
+}

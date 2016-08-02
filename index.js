@@ -8,9 +8,7 @@ var app = express();
 var mkdirp = require('mkdirp');
 var jsonfile = require('jsonfile')
 var mongojs = require('mongojs')
-
-
-
+var fs = require("fs")
 //Replace Later with ARGV
 mongo = "192.81.219.77"
 pulser_site = "http://25.133.238.121:9003"
@@ -116,7 +114,6 @@ function epoch_commander(msg) {
 }
 
 function shot(msg) {
-
     msg['source'] = source
     msg['inid'] = inid
     if (msg['Run'].toLowerCase() == 'y') {
@@ -125,7 +122,6 @@ function shot(msg) {
         msg['_id'] = parseInt(Date.now() / 1000)
 
         if (msg['Name'] != undefined) {
-            console.log(msg['Name'])
             msg['run'] = msg['Name'] + "_" + msg['TransmissionMode']
 
             //Save local file
@@ -169,6 +165,9 @@ app.use(bodyParser.json()); // to support JSON-encoded bodies
 app.use(bodyParser.urlencoded({ // to support URL-encoded bodies
     extended: true
 }));
+app.use('/static',express.static('static'));
+app.use('/fonts',express.static('fonts'));
+
 
 app.post("/singleshot/", function (req, res) {
     res.send(shot(req.body));
@@ -202,7 +201,7 @@ app.post('/table_save/', function (req, res) {
     res.send(save_table(req.body));
 });
 
-app.post('/table_load/', function (req, res) {
+app.get('/table_load/', function (req, res) {
     res.send(load_table());
 });
 
