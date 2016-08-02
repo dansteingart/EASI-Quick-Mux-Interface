@@ -1,7 +1,16 @@
 var express = require('express'); // Web Interface Stuff
-var sleep = require('sleep');     // Sleep for Pusler. If Interface is slow this is likely why
+var bodyParser = require('body-parser')
+var cors = require('cors')
+
+var sleep = require('sleep');     // Sleep for Pulser. If Interface is slow this is likely why
 var request = require('urllib-sync').request; // For talking to forwarder
 var app = express();
+
+app.use(cors());
+app.use( bodyParser.json() );       // to support JSON-encoded bodies
+app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
+  extended: true
+}));
 
 //Replace Later with ARGV
 pulser_site = "http://25.133.238.121:9003"
@@ -73,11 +82,10 @@ function get_waveform()
     else return "pusler timed out"
 }
 
-
 function mux_commander(msg)
 {
-    write_mux("")
     out = ""
+    write_mux(out)
 
     if (msg['TransmissionMode'].toLocaleLowerCase == "pe")      out = msg['Channel1']
     else if (msg['TransmissionMode'].toLocaleLowerCase == "tr") out = msg['Channel1']+","+msg['Channel2']
@@ -99,18 +107,27 @@ function epoch_commander(msg)
 
     for (k in keys)
     {
-            kk = keys(k)
-            if (available.search(kk) > 0) write_pulser("param_"+kk+"="+msgo[k])
+            kk = keys[k]
+            if (available.search(kk) > 0); write_pulser("param_"+kk+"="+msgo[kk] )
     }
 
     msg['amp'] = get_waveform();
+
     return msg;
 
 }
 
+function shot(msg)
+{
+    mux_commander(msg);
+    msg = epoch_commander(msg);
+    return msg
+}
+app.post("/singleshot/",function(req,res){res.send(shot(req.body));})
 
+app.post("/settings/",function(req,res){res.send("temp");})
 
-app.get("/",function(req,res){res.send(get_waveform());})
+app.get("/",function(req,res){res.send("What you talkin' bout Willis?")})
 
 app.get("/last_from_pulser/",function(req,res){res.send(read_pulser());})
 
