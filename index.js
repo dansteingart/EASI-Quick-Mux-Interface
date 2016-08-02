@@ -1,15 +1,15 @@
-var express = require('express');
-var sleep = require('sleep');
-
-var request = require('urllib-sync').request;
+var express = require('express'); // Web Interface Stuff
+var sleep = require('sleep');     // Sleep for Pusler. If Interface is slow this is likely why
+var request = require('urllib-sync').request; // For talking to forwarder
 var app = express();
 
+//Replace Later with ARGV
 pulser_site = "http://25.133.238.121:9003"
 mux_site    = "http://25.133.238.121:9002"
 
 function write_mux(msg)
 {
-    wsite = mux_site+"/writecf/"+msg 
+    wsite = mux_site+"/write/"+msg
     var res = request(wsite);
     sleep.usleep(50000);
     return res['data'].toString()
@@ -74,6 +74,41 @@ function get_waveform()
 }
 
 
+function mux_commander(msg)
+{
+    write_mux("")
+    out = ""
+
+    if (msg['TransmissionMode'].toLocaleLowerCase == "pe")      out = msg['Channel1']
+    else if (msg['TransmissionMode'].toLocaleLowerCase == "tr") out = msg['Channel1']+","+msg['Channel2']
+
+    write_mux(out)
+    sleep.usleep(100000)
+}
+
+function epoch_commander(msg)
+{
+    keys = []
+    for (k in msg) keys.push(k)
+
+    msgo = msg
+    if (msgo['TransmissionMode'].toLowerCase() == "pe") msgo['TransmissionMode'] = 0
+    else if (msgo['TransmissionMode'].toLowerCase() == "tr") msgo['TransmissionMode'] = 2
+
+    available = "Freq,Range,TransmissionMode,BaseGain,FilterStandard,Delay"
+
+    for (k in keys)
+    {
+            kk = keys(k)
+            if (available.search(kk) > 0) write_pulser("param_"+kk+"="+msgo[k])
+    }
+
+    msg['amp'] = get_waveform();
+    return msg;
+
+}
+
+
 
 app.get("/",function(req,res){res.send(get_waveform());})
 
@@ -84,7 +119,6 @@ app.get("/last_from_mux/",function(req,res){res.send(read_pulser());})
 app.get('/write_to_pulser/*', function (req, res) {res.send(write_pulser(req['originalUrl'].split("/").slice(-1)) ) });
 
 app.get('/write_to_mux/*', function (req, res) {res.send(write_mux(req['originalUrl'].split("/").slice(-1)) ) });
-
 
 app.listen(3000, function () {console.log('Example app listening on port 3000!');});
 
