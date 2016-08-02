@@ -1,0 +1,18 @@
+{
+  "name": "easi-quick-mux-server",
+  "version": "0.0.1",
+  "description": "miminal controller for the EASI pulser mux thing",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.14.0",
+    "install": "^0.8.1",
+    "npm": "^3.10.5",
+    "urllib": "^2.11.0",
+    "urllib-sync": "^1.1.3"
+  }
+}
