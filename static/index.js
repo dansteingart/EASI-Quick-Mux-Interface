@@ -1,7 +1,6 @@
 //Make Header (just edit to change structure of table, nothing else needs to be changed in this file)
 var allhead = "Name(unique to the cell),TransmissionMode(TR/PE),Channel1(PE Channel),Channel2(TR Channel),BaseGain(dB),Delay(us),Range(us),Freq(MHz),Notes,CyclerCode,FilterStandard,LastWaveform,Run?(Y/N)"
 
-
 //Collect Elements to Play with Later
 var $TABLE = $('#table');
 var $BTN = $('#export-btn');
@@ -69,7 +68,6 @@ $('.table-add').click(function () {
 });
 
 $('.table-remove').click(function () {
-    console.log(this)
     $(this).parents('tr').detach();
 });
 
@@ -108,10 +106,8 @@ $BTN.click(function () {
         });
         h['run'] = $(this)[0].getAttribute('run')
         data.push(h);
-        console.log($td)
     });
 
-    console.log(data)
     sendsettings(data) //DS Addition
 });
 //ye new code to make it rain
@@ -134,7 +130,6 @@ function loadsettings() {
 
 //define row
 function makerow(p) {
-    console.log(p)
     //get the structure of the row
     var $clone = $TABLE.find('tr.hide').clone(true).removeClass('hide table-line');
     //fill in the row with values
@@ -156,18 +151,43 @@ function sendsettings(setobj) {
         // Output the result
         //json_str = JSON.stringify(out)
     $.post("/table_save", out, function (data) {
-        console.log(data)
         $("#updates").text("table save status: "+data['success'])
     })
 }
 
+
+//Table Formatting Options
+function clearbackgrounds(){$TABLE.find('tr:not(:hidden)').css('background','none')}
+function setbackground(rowid,color){$('tr[run="'+rowid+'"]').css('background',color)}
+
+//Get Headers
+function getheaders()
+{
+    $rows = $TABLE.find('tr:not(:hidden)')
+    headers = []
+    $($rows.shift()).find('th:not(:empty)').each(function () {headers.push($(this).text());});
+    return headers
+}
+
+function getrowdata(rowid)
+{
+    out = {}
+    headers = getheaders()
+    tds = $('tr[run="'+rowid+'"]').find("td")
+    for (h in headers) out[headers[h]] = tds.eq(h).text()
+
+    out['run'] = rowid
+    return out
+}
+
+//Not used yet, might remove for socket stuff
 function getlastwave() {
     $.get(URLHERE, function (data) {
         //int
     })
 }
 
-
+//function to make row id
 function makeid(ll){
    parent = ll.target.parentElement
    alltds = parent.children
@@ -201,38 +221,30 @@ function()
 ,1000)
 
 
+
+//Single Shot Handling Code
+holdnow = undefined
 function getsingleshot(tis)
 {
-    var $rows = $TABLE.find('tr:not(:hidden)');
-    $rows.css('background','none') //clear background
-    var $row = $(tis).parents('tr');
-    var $td = $row.find('td');
-
-
-    $row[0].style["background"] = 'pink'
-
-    var h = {};
-    headers = []
-    $($rows.shift()).find('th:not(:empty)').each(function () {
-        headers.push($(this).text());
-    });
-
-    // Use the headers from earlier to name our hash keys
-    headers.forEach(function (header, i) {
-        console.log(header)
-        h[header] = $td.eq(i).text();
-    });
-
-    h['run'] =  $row[0].getAttribute('run')
+    clearbackgrounds()
+    rowid = $(tis).parents('tr')[0].getAttribute('run')
+    setbackground(rowid,"pink")
+    h = getrowdata(rowid)
     $("#status").html("Waiting for single shot to finish for run "+h['run'])
+    $.post("/singleshot/",h)
+}
 
-    console.log(h)
-    $.post("/singleshot/",h,
-        function(data,$row){
-        ins = "<div style='text-align:right; vertical-align:middle;'><span class='inlinespark'></span></div>"
-        //$("#status").html(ins)
-        $("tr[run='"+h['run']+"'] td[kind='LastWaveform']").html(ins)
-        $("tr[run='"+h['run']+"'] td[kind='LastWaveform']").sparkline(data['amp'], {
+//Web Socket Handling code
+var socket = io();
+socket.on('news', function (data) {console.log(data);});
+socket.on('update', function (data) {console.log(data);});
+socket.on('singleshot',
+         function (data){
+            h = data
+            ins = "<div style='text-align:right; vertical-align:middle;'><span class='inlinespark'></span></div>"
+            //$("#status").html(ins)
+            $("tr[run='"+h['run']+"'] td[kind='LastWaveform']").html(ins)
+            $("tr[run='"+h['run']+"'] td[kind='LastWaveform']").sparkline(data['amp'], {
             type: 'line'
             , width: '100'
             , height: '50'
@@ -242,8 +254,8 @@ function getsingleshot(tis)
             , spotRadius: 2
             , chartRangeMin: 0
             , chartRangeMax: 255
-        });
-        $('[run="'+h['run']+'"]')[0].style["background"] = 'lightgreen'
-
+            });
+            setbackground(h['run'],"lightgreen")
     })
-}
+
+

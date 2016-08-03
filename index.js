@@ -5,6 +5,9 @@ var cors = require('cors')
 var sleep = require('sleep'); // Sleep for Pulser. If Interface is slow this is likely why
 var request = require('urllib-sync').request; // For talking to forwarder
 var app = express();
+var server = require('http').Server(app);
+var io = require('socket.io')(server);
+
 var mkdirp = require('mkdirp');
 var jsonfile = require('jsonfile')
 var mongojs = require('mongojs')
@@ -161,6 +164,8 @@ function load_table() {
     return msg
 }
 
+function fire_update(msg){msg['socket']="firefire";io.emit("update",msg)}
+
 //Web Portion
 app.use(cors());
 app.use(bodyParser.json()); // to support JSON-encoded bodies
@@ -172,8 +177,11 @@ app.use('/fonts',express.static('fonts'));
 
 app.post("/singleshot/", function (req, res) {
     //this is blocking for a while, I think
+    res.send({'status':'working on it'})
     foo = shot(req.body)
-    res.send(foo);
+    fire_update(foo)
+    //res.send(foo);
+    io.emit("singleshot",foo)
 })
 
 app.post("/settings/", function (req, res) {
@@ -209,6 +217,19 @@ app.get('/table_load/', function (req, res) {
 });
 
 
-app.listen(3000, function () {
+server.listen(3000, function () {
     console.log('Example app listening on port 3000!');
 });
+
+//Web Socket Stuff//
+
+msq_queue = []
+//this listens to _all_ connections and acts accordingly
+io.on('connection', function (socket) {
+    socket.on('frombrowbrow',function(data){console.log(data)})
+});
+
+//this sends a broadcast every 500 ms
+//setInterval(function(){io.emit("news","ping")},500)
+
+
