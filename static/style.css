@@ -103,3 +103,8 @@ input:focus
 {
     background:lightyellow;
 }
+
+tr:focus
+{
+        background:silver;
+}

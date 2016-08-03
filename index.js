@@ -73,6 +73,7 @@ function get_waveform() {
     write_pulser("param_WaveForm?");
     watchdog = 0
     sleep.usleep(100000)
+
     while ((check_pulser_ok() == false) & (watchdog < 20)) {
         sleep.usleep(200000)
         watchdog = watchdog + 1;
@@ -108,8 +109,8 @@ function epoch_commander(msg) {
         if (available.search(kk) > 0) write_pulser("param_" + kk + "=" + msgo[kk]);
     }
 
-    msg['amp'] = get_waveform()[0];
     msg['dtus'] = msg['Range'] / 495
+    msg['amp'] = get_waveform()[0];
     return msg;
 
 }
@@ -117,13 +118,14 @@ function epoch_commander(msg) {
 function shot(msg) {
     msg['source'] = source
     msg['inid'] = inid
-    if (msg['Run'].toLowerCase() == 'y') {
+    if (msg['Run?'].toLowerCase() == 'y') {
         mux_commander(msg);
         msg = epoch_commander(msg);
         msg['_id'] = parseInt(Date.now() / 1000)
-
         if (msg['Name'] != undefined) {
-            msg['run'] = msg['Name'] + "_" + msg['TransmissionMode']
+
+            //give it a run name if the table run name failed. shouldn't need this
+            if (msg['run'] == undefined) msg['run'] = msg['Name'] + "_" + msg['TransmissionMode']
 
             //Save local file
             dd = new Date().toISOString().slice(0, 10)
@@ -159,7 +161,6 @@ function load_table() {
     return msg
 }
 
-
 //Web Portion
 app.use(cors());
 app.use(bodyParser.json()); // to support JSON-encoded bodies
@@ -169,9 +170,10 @@ app.use(bodyParser.urlencoded({ // to support URL-encoded bodies
 app.use('/static',express.static('static'));
 app.use('/fonts',express.static('fonts'));
 
-
 app.post("/singleshot/", function (req, res) {
-    res.send(shot(req.body));
+    //this is blocking for a while, I think
+    foo = shot(req.body)
+    res.send(foo);
 })
 
 app.post("/settings/", function (req, res) {
@@ -205,7 +207,6 @@ app.post('/table_save/', function (req, res) {
 app.get('/table_load/', function (req, res) {
     res.send(load_table());
 });
-
 
 
 app.listen(3000, function () {
