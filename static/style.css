@@ -65,7 +65,7 @@ input
     outline: 0px solid transparent;
     border: 0px;
     border-bottom: 1px solid silver;
-    width: 50px;
+    width: 110px;
     text-align:center;
 
 }
@@ -93,6 +93,12 @@ input:focus
 {
   background:grey;
 }
+
+.btn-primary:focus
+{
+  background:black;
+}
+
 
 .btn-primary:active
 {

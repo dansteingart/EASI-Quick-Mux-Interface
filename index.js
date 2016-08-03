@@ -89,6 +89,8 @@ function mux_commander(msg) {
 
 //Start the shot
 function start_shot(msg) {
+    fire_queue_status()
+    mux_queue_ready = false
     msg['source'] = source
     msg['inid'] = inid
     if (msg['Run?'].toLowerCase() == 'y') {
@@ -97,7 +99,9 @@ function start_shot(msg) {
         msg = epoch_commander(msg);
 
     }
-    return msg
+    //pass on
+   else mux_queue_ready = true
+
 }
 
 //send data to the epoch commander
@@ -109,7 +113,7 @@ function epoch_commander(msg) {
     if (msg['TransmissionMode'].toLowerCase() == "pe")      msg['TransmissionMode'] = 0
     else if (msg['TransmissionMode'].toLowerCase() == "tr") msg['TransmissionMode'] = 2
 
-    available = "Freq,Range,TransmissionModeNo,BaseGain,FilterStandard,Delay"
+    available = "Freq,Range,TransmissionMode,BaseGain,FilterStandard,Delay"
 
     for (k in keys) {
         kk = keys[k]
@@ -119,9 +123,8 @@ function epoch_commander(msg) {
     msg['dtus'] = msg['Range'] / 495
 
     //again, so sorry
-    if (msg['TransmissionMode']== 0 )       msg['TransmissionModeNo'] = "PE"
-    else if (msg['TransmissionMode'] == 2 ) msg['TransmissionModeNo'] = "TR"
-
+    if (msg['TransmissionMode']== 0 )       msg['TransmissionMode'] = "PE"
+    else if (msg['TransmissionMode'] == 2 ) msg['TransmissionMode'] = "TR"
     get_waveform(msg);
 //    msg['amp'] = get_waveform()[0];
 //    return msg;
@@ -139,6 +142,7 @@ function get_waveform(msg) {
         function increaseCounter(callback) {
             watchdog++;
             output = check_pulser_ok()
+            //console.log("watchdog: "+watchdog);
             //callback must be called once this function has completed, it takes an optional error argument
             setTimeout(callback, 200);
         },
@@ -170,10 +174,12 @@ function end_shot(msg){
                 try {db.collection("acoustic_data").insert(msg)}
                 catch (e) {console.log(e)}
             }
+            delete queue_state['single_shot']
+            delete queue_state['current_run']
+
             io.emit("singleshot",msg)
+            mux_queue_ready = true;
 }
-
-
 
 function save_table(msg) {
     fn = "settings_table.json"
@@ -185,10 +191,19 @@ function save_table(msg) {
 function load_table() {
     fn = "settings_table.json"
     msg = jsonfile.readFileSync(fn)
+    source = msg['source_port']
+    pulser_site = "http://localhost:"  + msg['pulser_port']
+    mux_site = "http://localhost:"     + msg['mux_port']
     return msg
 }
 
 function fire_update(msg){msg['socket']="firefire";io.emit("update",msg)}
+
+//sending queue status
+function fire_queue_status(){io.emit("queuestatus",queue_state)};
+
+
+
 
 //Web Portion
 app.use(cors());
@@ -200,12 +215,14 @@ app.use('/static',express.static('static'));
 app.use('/fonts',express.static('fonts'));
 
 app.post("/singleshot/", function (req, res) {
-    //this is blocking for a while, I think
+    queuer_on = false;
+    mm = req.body
+    queue_state["single_shot"] = "yes"
+    queue_state['current_run'] = mm['run']
+
     res.send({'status':'working on it'})
-    foo = start_shot(req.body)
-    //    fire_update(foo)
-    //    //res.send(foo);
-    //    io.emit("singleshot",foo)
+    foo = start_shot(mm)
+
 })
 
 app.post("/settings/", function (req, res) {
@@ -233,11 +250,21 @@ app.get('/write_to_mux/*', function (req, res) {
 });
 
 app.post('/table_save/', function (req, res) {
-    res.send(save_table(req.body));
+    qq = req.body;
+    msg_queue = qq;
+    res.send(save_table(qq));
 });
 
 app.get('/table_load/', function (req, res) {
     res.send(load_table());
+});
+
+app.post('/queue_state/', function (req, res) {
+    state = req.body
+
+    //da fuq JSON?  No sending booleans?
+    if (state['querer_on'] == 'false') queuer_on = false
+    if (state['querer_on'] == 'true') queuer_on = true
 });
 
 
@@ -247,11 +274,42 @@ server.listen(3000, function () {
 
 //Web Socket Stuff//
 
-msq_queue = []
 //this listens to _all_ connections and acts accordingly
 io.on('connection', function (socket) {
     socket.on('frombrowbrow',function(data){console.log(data)})
 });
+
+
+//QUEUE SON
+
+msg_queue = load_table()
+
+
+var queuer_on = false
+var mux_queue_ready = true
+var queue_state = {}
+queue_state['queuer_on'] = queuer_on
+queue_position = 0;
+
+setInterval(
+    function(){
+        queue_state['queuer_on'] = queuer_on
+        queue_state['run'] == ""
+        if (queuer_on && mux_queue_ready){
+                //recall message here == increment if need be
+                total_rows = msg_queue['data'].length
+                if (queue_position >= total_rows) queue_position = 0;
+                console.log(total_rows)
+                msg = msg_queue['data'][queue_position]
+                queue_position++;
+                queue_state['current_run'] = msg['run']
+                console.log(msg['TransmissionMode'])
+                start_shot(msg)
+            }
+
+        fire_queue_status()
+    }
+    ,500)
 
 //this sends a broadcast every 500 ms
 //setInterval(function(){io.emit("news","ping")},500)

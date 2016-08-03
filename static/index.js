@@ -128,6 +128,8 @@ function loadsettings() {
     })
 }
 
+function updateline(str){$("#updates").html(str)}
+
 //define row
 function makerow(p) {
     //get the structure of the row
@@ -155,9 +157,9 @@ function sendsettings(setobj) {
     })
 }
 
-
 //Table Formatting Options
 function clearbackgrounds(){$TABLE.find('tr:not(:hidden)').css('background','none')}
+
 function setbackground(rowid,color){$('tr[run="'+rowid+'"]').css('background',color)}
 
 //Get Headers
@@ -204,6 +206,8 @@ function makeid(ll){
    parent.setAttribute("run",run)
 }
 
+function statusline(str){$("#status").html(str)}
+
 //Make Sure ID is consistent with settings
 $TABLE.keyup(function(data){makeid(data)})
 
@@ -223,15 +227,17 @@ function()
 
 
 //Single Shot Handling Code
-holdnow = undefined
 function getsingleshot(tis)
 {
-    clearbackgrounds()
-    rowid = $(tis).parents('tr')[0].getAttribute('run')
-    setbackground(rowid,"pink")
-    h = getrowdata(rowid)
-    $("#status").html("Waiting for single shot to finish for run "+h['run'])
-    $.post("/singleshot/",h)
+    if (qs['queuer_on'] == true){updateline("stop queue before single shots")}
+    else{
+            clearbackgrounds()
+            rowid = $(tis).parents('tr')[0].getAttribute('run')
+            h = getrowdata(rowid)
+            h['singleshot'] = true
+            h['Run?'] = "Y"
+            $.post("/singleshot/",h)
+        }
 }
 
 //Web Socket Handling code
@@ -256,7 +262,23 @@ socket.on('singleshot',
             , chartRangeMin: 0
             , chartRangeMax: 255
             });
-            setbackground(h['run'],"lightgreen")
     })
 
+var qs = undefined
+socket.on('queuestatus',
+          function(data){
+            clearbackgrounds()
+            qs = data
+            if (data['current_run'] != undefined) statusline("Status: Currently running "+data['current_run'])
+            else statusline("Status: Currently not doing anything")
+            setbackground(data['current_run'],'pink')
+            if (data['queuer_on'] ) $("#queue-btn").text("Queue Running")
+            else $("#queue-btn").text("Queue Off")
+        })
 
+
+$("#queue-btn").click(function(){
+    console.log(qs);
+    if (qs['queuer_on'] == false) $.post("/queue_state/",{'querer_on':true})
+    else $.post("/queue_state/",{'querer_on':false})
+})
