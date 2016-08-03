@@ -9,7 +9,8 @@ var mkdirp = require('mkdirp');
 var jsonfile = require('jsonfile')
 var mongojs = require('mongojs')
 var fs = require("fs")
-//Replace Later with ARGV
+
+//Replace Later with ARGV and in browser changes
 mongo = "192.81.219.77"
 pulser_site = "http://25.133.238.121:9003"
 mux_site = "http://25.133.238.121:9002"
