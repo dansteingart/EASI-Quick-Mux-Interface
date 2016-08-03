@@ -7,6 +7,7 @@ var request = require('urllib-sync').request; // For talking to forwarder
 var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
+var async = require("async");
 
 var mkdirp = require('mkdirp');
 var jsonfile = require('jsonfile')
@@ -72,19 +73,6 @@ function process_waveform(wave) {
     return [first, second]
 }
 
-function get_waveform() {
-    write_pulser("param_WaveForm?");
-    watchdog = 0
-    sleep.usleep(100000)
-
-    while ((check_pulser_ok() == false) & (watchdog < 20)) {
-        sleep.usleep(200000)
-        watchdog = watchdog + 1;
-    }
-
-    if (watchdog < 20) return process_waveform(read_pulser())
-    else return "pusler timed out"
-}
 
 function mux_commander(msg) {
     out = ""
@@ -97,59 +85,95 @@ function mux_commander(msg) {
     sleep.usleep(100000)
 }
 
+//The async nightmare begins
+
+//Start the shot
+function start_shot(msg) {
+    msg['source'] = source
+    msg['inid'] = inid
+    if (msg['Run?'].toLowerCase() == 'y') {
+        mux_commander(msg);
+        msg['_id'] = parseInt(Date.now() / 1000)
+        msg = epoch_commander(msg);
+
+    }
+    return msg
+}
+
+//send data to the epoch commander
 function epoch_commander(msg) {
     keys = []
     for (k in msg) keys.push(k)
 
-    msgo = msg
-    if (msgo['TransmissionMode'].toLowerCase() == "pe") msgo['TransmissionModeNo'] = 0
-    else if (msgo['TransmissionMode'].toLowerCase() == "tr") msgo['TransmissionModeNo'] = 2
+    //sorry about this
+    if (msg['TransmissionMode'].toLowerCase() == "pe")      msg['TransmissionMode'] = 0
+    else if (msg['TransmissionMode'].toLowerCase() == "tr") msg['TransmissionMode'] = 2
 
     available = "Freq,Range,TransmissionModeNo,BaseGain,FilterStandard,Delay"
 
     for (k in keys) {
         kk = keys[k]
-        if (available.search(kk) > 0) write_pulser("param_" + kk + "=" + msgo[kk]);
+        if (available.search(kk) > 0) {write_pulser("param_" + kk + "=" + msg[kk]);}
     }
 
     msg['dtus'] = msg['Range'] / 495
-    msg['amp'] = get_waveform()[0];
-    return msg;
+
+    //again, so sorry
+    if (msg['TransmissionMode']== 0 )       msg['TransmissionModeNo'] = "PE"
+    else if (msg['TransmissionMode'] == 2 ) msg['TransmissionModeNo'] = "TR"
+
+    get_waveform(msg);
+//    msg['amp'] = get_waveform()[0];
+//    return msg;
 
 }
 
-function shot(msg) {
-    msg['source'] = source
-    msg['inid'] = inid
-    if (msg['Run?'].toLowerCase() == 'y') {
-        mux_commander(msg);
-        msg = epoch_commander(msg);
-        msg['_id'] = parseInt(Date.now() / 1000)
-        if (msg['Name'] != undefined) {
-
-            //give it a run name if the table run name failed. shouldn't need this
-            if (msg['run'] == undefined) msg['run'] = msg['Name'] + "_" + msg['TransmissionMode']
-
-            //Save local file
-            dd = new Date().toISOString().slice(0, 10)
-            dd = "data-" + dd
-            ddd = "data/" + dd
-            mkdirp.sync(ddd)
-            fn = ddd + "/" + msg['run'] + "_" + msg['_id'] + ".json"
-            jsonfile.writeFileSync(fn, msg)
-
-            //Then push to the db
-            try {
-                db.collection("acoustic_data").insert(msg)
-            } catch (e) {
-                console.log(e)
-            }
-
+//then wait for the wave form.  can take up to 10 seconds so we make this a whilst and chek
+function get_waveform(msg) {
+    write_pulser("param_WaveForm?");
+    watchdog = 0
+    output = false
+    sleep.usleep(100000)
+    async.whilst(
+        function testCondition() { return !output && watchdog < 20; },
+        function increaseCounter(callback) {
+            watchdog++;
+            output = check_pulser_ok()
+            //callback must be called once this function has completed, it takes an optional error argument
+            setTimeout(callback, 200);
+        },
+        function callback(err) {
+            if (err) {console.log(err);return;}
+            msg['amp'] = process_waveform(read_pulser())[0]
+            end_shot(msg)
         }
+    );
 
-    }
-    return msg
 }
+
+//when the above is done send off for final processing and fire to where it needs to go
+function end_shot(msg){
+            if (msg['Name'] != undefined)
+            {
+                //give it a run name if the table run name failed. shouldn't need this
+                if (msg['run'] == undefined) msg['run'] = msg['Name'] + "_" + msg['TransmissionMode']
+
+                //Save local file
+                dd = new Date().toISOString().slice(0, 10)
+                dd = "data-" + dd
+                ddd = "data/" + dd
+                mkdirp.sync(ddd)
+                fn = ddd + "/" + msg['run'] + "_" + msg['_id'] + ".json"
+                jsonfile.writeFileSync(fn, msg)
+
+                //Then push to the db
+                try {db.collection("acoustic_data").insert(msg)}
+                catch (e) {console.log(e)}
+            }
+            io.emit("singleshot",msg)
+}
+
+
 
 function save_table(msg) {
     fn = "settings_table.json"
@@ -178,10 +202,10 @@ app.use('/fonts',express.static('fonts'));
 app.post("/singleshot/", function (req, res) {
     //this is blocking for a while, I think
     res.send({'status':'working on it'})
-    foo = shot(req.body)
-    fire_update(foo)
-    //res.send(foo);
-    io.emit("singleshot",foo)
+    foo = start_shot(req.body)
+    //    fire_update(foo)
+    //    //res.send(foo);
+    //    io.emit("singleshot",foo)
 })
 
 app.post("/settings/", function (req, res) {

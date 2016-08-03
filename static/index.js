@@ -241,6 +241,7 @@ socket.on('update', function (data) {console.log(data);});
 socket.on('singleshot',
          function (data){
             h = data
+            console.log(data)
             ins = "<div style='text-align:right; vertical-align:middle;'><span class='inlinespark'></span></div>"
             //$("#status").html(ins)
             $("tr[run='"+h['run']+"'] td[kind='LastWaveform']").html(ins)
