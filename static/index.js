@@ -313,7 +313,10 @@ socket.on('queuestatus',
     function (data) {
         clearbackgrounds()
         qs = data
-        if (data['current_run'] != undefined) statusline("Status: Currently running " + data['current_run'])
+        action = "skipping"
+        for (k in table_on_server) {if (table_on_server[k]['Run?'].search("Y") == 0 && table_on_server[k]['run'] == qs['current_run'] ) action = "running"}
+
+        if (data['current_run'] != undefined) statusline("Status: Currently "+ action + " + data['current_run'])
         else statusline("Status: Currently not doing anything")
         setbackground(data['current_run'], 'pink')
         if (data['queuer_on']) $("#queue-btn").text("Queue Running")
