@@ -9,27 +9,29 @@ var $EXPORT = $('#export');
 
 //Just the headers
 fields = allhead.split(",")
-for (f in fields) fields[f] = fields[f].replace(/\s+/g, "").replace(/\(.*?\)/g,"")
+for (f in fields) fields[f] = fields[f].replace(/\s+/g, "").replace(/\(.*?\)/g, "")
 fields.push("")
 fields.push("")
 fields.push("")
 
 //Unique Row ID Header
-var URIDH = fields.slice(0,8)
+var URIDH = fields.slice(0, 8)
 
 //Now just the tooltips
-tips =  allhead.split(",")
-for (t in tips)
-{
-    try {tips[t] = tips[t].match(/\(.*?\)/g)[0]}
-    catch(e) {tips[t] = ""}
+tips = allhead.split(",")
+for (t in tips) {
+    try {
+        tips[t] = tips[t].match(/\(.*?\)/g)[0]
+    } catch (e) {
+        tips[t] = ""
+    }
 }
 tips.push("(Single Shot)")
 tips.push("(Delete Row)")
 tips.push("(Move Row)")
 
 header = ""
-for (f in fields) header += "<th title='"+tips[f]+"'>" + fields[f] + "</th>"
+for (f in fields) header += "<th title='" + tips[f] + "'>" + fields[f] + "</th>"
 $("#header").html(header)
 
 
@@ -54,7 +56,7 @@ cloner = ""
 for (c in clone_arr) {
     var ce = "false"
     if (clone_arr[c] == "") ce = "true"
-    cloner += "<td kind='"+fields[c]+"' contenteditable='" + ce + "' title='"+tips[c]+"'>" + clone_arr[c] + "</td>"
+    cloner += "<td kind='" + fields[c] + "' contenteditable='" + ce + "' title='" + tips[c] + "'>" + clone_arr[c] + "</td>"
 }
 $("#cloner").html(cloner)
 
@@ -82,13 +84,21 @@ $('.table-down').click(function () {
     $row.next().after($row.get(0));
 });
 
-$('.single-shot').click(function () {getsingleshot(this)});
+$('.single-shot').click(function () {
+    getsingleshot(this)
+});
 
 // A few jQuery helpers for exporting only
 jQuery.fn.pop = [].pop;
 jQuery.fn.shift = [].shift;
 //export button
 $BTN.click(function () {
+    scrape_table()
+});
+//ye new code to make it rain
+
+//send table to server
+function scrape_table() {
     var $rows = $TABLE.find('tr:not(:hidden)');
     var headers = [];
     var data = [];
@@ -109,8 +119,8 @@ $BTN.click(function () {
     });
 
     sendsettings(data) //DS Addition
-});
-//ye new code to make it rain
+
+}
 
 //Basic data read library
 function loadsettings() {
@@ -128,7 +138,9 @@ function loadsettings() {
     })
 }
 
-function updateline(str){$("#updates").html(str)}
+function updateline(str) {
+    $("#updates").html(str)
+}
 
 //define row
 function makerow(p) {
@@ -153,29 +165,33 @@ function sendsettings(setobj) {
         // Output the result
         //json_str = JSON.stringify(out)
     $.post("/table_save", out, function (data) {
-        $("#updates").text("table save status: "+data['success'])
+        $("#updates").text("table save status: " + data['success'])
     })
 }
 
 //Table Formatting Options
-function clearbackgrounds(){$TABLE.find('tr:not(:hidden)').css('background','none')}
+function clearbackgrounds() {
+    $TABLE.find('tr:not(:hidden)').css('background', 'none')
+}
 
-function setbackground(rowid,color){$('tr[run="'+rowid+'"]').css('background',color)}
+function setbackground(rowid, color) {
+    $('tr[run="' + rowid + '"]').css('background', color)
+}
 
 //Get Headers
-function getheaders()
-{
+function getheaders() {
     $rows = $TABLE.find('tr:not(:hidden)')
     headers = []
-    $($rows.shift()).find('th:not(:empty)').each(function () {headers.push($(this).text());});
+    $($rows.shift()).find('th:not(:empty)').each(function () {
+        headers.push($(this).text());
+    });
     return headers
 }
 
-function getrowdata(rowid)
-{
+function getrowdata(rowid) {
     out = {}
     headers = getheaders()
-    tds = $('tr[run="'+rowid+'"]').find("td")
+    tds = $('tr[run="' + rowid + '"]').find("td")
     for (h in headers) out[headers[h]] = tds.eq(h).text()
 
     out['run'] = rowid
@@ -190,95 +206,107 @@ function getlastwave() {
 }
 
 //function to make row id
-function makeid(ll){
-   parent = ll.target.parentElement
-   alltds = parent.children
-   run = ""
-   URIDH.forEach(function(U,i){
-       part = alltds[i].innerText.replace(/\n/g,"").trim()
-       if (part == "") part = "0"
-       run+=part+"_"
-   }
-                )
-   run = run.slice(0,-1)
-   $("#updates").text("setting run ID to "+run)
-   oof = run
-   parent.setAttribute("run",run)
+function makeid(ll) {
+    parent = ll.target.parentElement
+    alltds = parent.children
+    run = ""
+    URIDH.forEach(function (U, i) {
+        part = alltds[i].innerText.replace(/\n/g, "").trim()
+        if (part == "") part = "0"
+        run += part + "_"
+    })
+    run = run.slice(0, -1)
+    $("#updates").text("setting run ID to " + run)
+    oof = run
+    parent.setAttribute("run", run)
 }
 
-function statusline(str){$("#status").html(str)}
+function statusline(str) {
+    $("#status").html(str)
+}
 
 //Make Sure ID is consistent with settings
-$TABLE.keyup(function(data){makeid(data)})
+$TABLE.keyup(function (data) {
+    makeid(data)
+})
 
 old_html = ""
 setInterval(
-function()
-    {
-        if (old_html == $("#updates").text() & old_html != "" ){
-            $("#updates").fadeOut(500, function(){$("#updates").text("")})
+    function () {
+        if (old_html == $("#updates").text() & old_html != "") {
+            $("#updates").fadeOut(500, function () {
+                $("#updates").text("")
+            })
             $("#updates").fadeIn(1)
 
         }
         old_html = $("#updates").text()
-    }
-,1000)
+    }, 1000)
 
 
 
 //Single Shot Handling Code
-function getsingleshot(tis)
-{
-    if (qs['queuer_on'] == true){updateline("stop queue before single shots")}
-    else{
-            clearbackgrounds()
-            rowid = $(tis).parents('tr')[0].getAttribute('run')
-            h = getrowdata(rowid)
-            h['singleshot'] = true
-            h['Run?'] = "Y"
-            $.post("/singleshot/",h)
-        }
+function getsingleshot(tis) {
+    if (qs['queuer_on'] == true) {
+        updateline("stop queue before single shots")
+    } else {
+        clearbackgrounds()
+        rowid = $(tis).parents('tr')[0].getAttribute('run')
+        h = getrowdata(rowid)
+        h['singleshot'] = true
+        h['Run?'] = "Y"
+        $.post("/singleshot/", h)
+    }
 }
 
 //Web Socket Handling code
 var socket = io();
-socket.on('news', function (data) {console.log(data);});
-socket.on('update', function (data) {console.log(data);});
+socket.on('news', function (data) {
+    console.log(data);
+});
+socket.on('update', function (data) {
+    console.log(data);
+});
 socket.on('singleshot',
-         function (data){
-            h = data
-            console.log(data)
-            ins = "<div style='text-align:right; vertical-align:middle;'><span class='inlinespark'></span></div>"
+    function (data) {
+        h = data
+        console.log(data)
+        ins = "<div style='text-align:right; vertical-align:middle;'><span class='inlinespark'></span></div>"
             //$("#status").html(ins)
-            $("tr[run='"+h['run']+"'] td[kind='LastWaveform']").html(ins)
-            $("tr[run='"+h['run']+"'] td[kind='LastWaveform']").sparkline(data['amp'], {
-            type: 'line'
-            , width: '100'
-            , height: '50'
-            , fillColor: false
-            , lineColor: "black"
-            , lineWidth: 1.5
-            , spotRadius: 2
-            , chartRangeMin: 0
-            , chartRangeMax: 255
-            });
+        $("tr[run='" + h['run'] + "'] td[kind='LastWaveform']").html(ins)
+        $("tr[run='" + h['run'] + "'] td[kind='LastWaveform']").sparkline(data['amp'], {
+            type: 'line',
+            width: '100',
+            height: '50',
+            fillColor: false,
+            lineColor: "black",
+            lineWidth: 1.5,
+            spotRadius: 2,
+            chartRangeMin: 0,
+            chartRangeMax: 255
+        });
     })
 
 var qs = undefined
 socket.on('queuestatus',
-          function(data){
-            clearbackgrounds()
-            qs = data
-            if (data['current_run'] != undefined) statusline("Status: Currently running "+data['current_run'])
-            else statusline("Status: Currently not doing anything")
-            setbackground(data['current_run'],'pink')
-            if (data['queuer_on'] ) $("#queue-btn").text("Queue Running")
-            else $("#queue-btn").text("Queue Off")
-        })
+    function (data) {
+        clearbackgrounds()
+        qs = data
+        if (data['current_run'] != undefined) statusline("Status: Currently running " + data['current_run'])
+        else statusline("Status: Currently not doing anything")
+        setbackground(data['current_run'], 'pink')
+        if (data['queuer_on']) $("#queue-btn").text("Queue Running")
+        else $("#queue-btn").text("Queue Off")
+    })
 
 
-$("#queue-btn").click(function(){
-    console.log(qs);
-    if (qs['queuer_on'] == false) $.post("/queue_state/",{'querer_on':true})
-    else $.post("/queue_state/",{'querer_on':false})
+$("#queue-btn").click(function () {
+    scrape_table()
+
+    if (qs['queuer_on'] == false) $.post("/queue_state/", {
+        'querer_on': true
+    })
+    else $.post("/queue_state/", {
+        'querer_on': false
+    })
 })

@@ -100,7 +100,7 @@ function start_shot(msg) {
 
     }
     //pass on
-   else mux_queue_ready = true
+    else mux_queue_ready = true
 
 }
 
@@ -110,24 +110,26 @@ function epoch_commander(msg) {
     for (k in msg) keys.push(k)
 
     //sorry about this
-    if (msg['TransmissionMode'].toLowerCase() == "pe")      msg['TransmissionMode'] = 0
+    if (msg['TransmissionMode'].toLowerCase() == "pe") msg['TransmissionMode'] = 0
     else if (msg['TransmissionMode'].toLowerCase() == "tr") msg['TransmissionMode'] = 2
 
     available = "Freq,Range,TransmissionMode,BaseGain,FilterStandard,Delay"
 
     for (k in keys) {
         kk = keys[k]
-        if (available.search(kk) > 0) {write_pulser("param_" + kk + "=" + msg[kk]);}
+        if (available.search(kk) > 0) {
+            write_pulser("param_" + kk + "=" + msg[kk]);
+        }
     }
 
     msg['dtus'] = msg['Range'] / 495
 
     //again, so sorry
-    if (msg['TransmissionMode']== 0 )       msg['TransmissionMode'] = "PE"
-    else if (msg['TransmissionMode'] == 2 ) msg['TransmissionMode'] = "TR"
+    if (msg['TransmissionMode'] == 0) msg['TransmissionMode'] = "PE"
+    else if (msg['TransmissionMode'] == 2) msg['TransmissionMode'] = "TR"
     get_waveform(msg);
-//    msg['amp'] = get_waveform()[0];
-//    return msg;
+    //    msg['amp'] = get_waveform()[0];
+    //    return msg;
 
 }
 
@@ -138,16 +140,21 @@ function get_waveform(msg) {
     output = false
     sleep.usleep(100000)
     async.whilst(
-        function testCondition() { return !output && watchdog < 20; },
+        function testCondition() {
+            return !output && watchdog < 20;
+        },
         function increaseCounter(callback) {
             watchdog++;
             output = check_pulser_ok()
-            //console.log("watchdog: "+watchdog);
-            //callback must be called once this function has completed, it takes an optional error argument
+                //console.log("watchdog: "+watchdog);
+                //callback must be called once this function has completed, it takes an optional error argument
             setTimeout(callback, 200);
         },
         function callback(err) {
-            if (err) {console.log(err);return;}
+            if (err) {
+                console.log(err);
+                return;
+            }
             msg['amp'] = process_waveform(read_pulser())[0]
             end_shot(msg)
         }
@@ -156,29 +163,31 @@ function get_waveform(msg) {
 }
 
 //when the above is done send off for final processing and fire to where it needs to go
-function end_shot(msg){
-            if (msg['Name'] != undefined)
-            {
-                //give it a run name if the table run name failed. shouldn't need this
-                if (msg['run'] == undefined) msg['run'] = msg['Name'] + "_" + msg['TransmissionMode']
+function end_shot(msg) {
+    if (msg['Name'] != undefined) {
+        //give it a run name if the table run name failed. shouldn't need this
+        if (msg['run'] == undefined) msg['run'] = msg['Name'] + "_" + msg['TransmissionMode']
 
-                //Save local file
-                dd = new Date().toISOString().slice(0, 10)
-                dd = "data-" + dd
-                ddd = "data/" + dd
-                mkdirp.sync(ddd)
-                fn = ddd + "/" + msg['run'] + "_" + msg['_id'] + ".json"
-                jsonfile.writeFileSync(fn, msg)
+        //Save local file
+        dd = new Date().toISOString().slice(0, 10)
+        dd = "data-" + dd
+        ddd = "data/" + dd
+        mkdirp.sync(ddd)
+        fn = ddd + "/" + msg['run'] + "_" + msg['_id'] + ".json"
+        jsonfile.writeFileSync(fn, msg)
 
-                //Then push to the db
-                try {db.collection("acoustic_data").insert(msg)}
-                catch (e) {console.log(e)}
-            }
-            delete queue_state['single_shot']
-            delete queue_state['current_run']
+        //Then push to the db
+        try {
+            db.collection("acoustic_data").insert(msg)
+        } catch (e) {
+            console.log(e)
+        }
+    }
+    delete queue_state['single_shot']
+    delete queue_state['current_run']
 
-            io.emit("singleshot",msg)
-            mux_queue_ready = true;
+    io.emit("singleshot", msg)
+    mux_queue_ready = true;
 }
 
 function save_table(msg) {
@@ -192,15 +201,26 @@ function load_table() {
     fn = "settings_table.json"
     msg = jsonfile.readFileSync(fn)
     source = msg['source_port']
-    pulser_site = "http://localhost:"  + msg['pulser_port']
-    mux_site = "http://localhost:"     + msg['mux_port']
+
+    if (msg['pulser_port'].search(":") == -1) pulser_site = "http://localhost:" + msg['pulser_port']
+    else pulser_site = msg['pulser_port']
+
+    if (msg['mux_port'].search(":") == -1) mux_site = "http://localhost:" + msg['mux_port']
+    else mux_site = msg['mux_port']
+
+
     return msg
 }
 
-function fire_update(msg){msg['socket']="firefire";io.emit("update",msg)}
+function fire_update(msg) {
+    msg['socket'] = "firefire";
+    io.emit("update", msg)
+}
 
 //sending queue status
-function fire_queue_status(){io.emit("queuestatus",queue_state)};
+function fire_queue_status() {
+    io.emit("queuestatus", queue_state)
+};
 
 
 
@@ -211,8 +231,8 @@ app.use(bodyParser.json()); // to support JSON-encoded bodies
 app.use(bodyParser.urlencoded({ // to support URL-encoded bodies
     extended: true
 }));
-app.use('/static',express.static('static'));
-app.use('/fonts',express.static('fonts'));
+app.use('/static', express.static('static'));
+app.use('/fonts', express.static('fonts'));
 
 app.post("/singleshot/", function (req, res) {
     queuer_on = false;
@@ -220,7 +240,9 @@ app.post("/singleshot/", function (req, res) {
     queue_state["single_shot"] = "yes"
     queue_state['current_run'] = mm['run']
 
-    res.send({'status':'working on it'})
+    res.send({
+        'status': 'working on it'
+    })
     foo = start_shot(mm)
 
 })
@@ -276,7 +298,9 @@ server.listen(3000, function () {
 
 //this listens to _all_ connections and acts accordingly
 io.on('connection', function (socket) {
-    socket.on('frombrowbrow',function(data){console.log(data)})
+    socket.on('frombrowbrow', function (data) {
+        console.log(data)
+    })
 });
 
 
@@ -292,26 +316,21 @@ queue_state['queuer_on'] = queuer_on
 queue_position = 0;
 
 setInterval(
-    function(){
+    function () {
         queue_state['queuer_on'] = queuer_on
         queue_state['run'] == ""
-        if (queuer_on && mux_queue_ready){
-                //recall message here == increment if need be
-                total_rows = msg_queue['data'].length
-                if (queue_position >= total_rows) queue_position = 0;
-                console.log(total_rows)
-                msg = msg_queue['data'][queue_position]
-                queue_position++;
-                queue_state['current_run'] = msg['run']
-                console.log(msg['TransmissionMode'])
-                start_shot(msg)
-            }
+        if (queuer_on && mux_queue_ready) {
+            //recall message here == increment if need be
+            total_rows = msg_queue['data'].length
+            if (queue_position >= total_rows) queue_position = 0;
+            msg = msg_queue['data'][queue_position]
+            queue_position++;
+            queue_state['current_run'] = msg['run']
+            start_shot(msg)
+        }
 
         fire_queue_status()
-    }
-    ,500)
+    }, 500)
 
 //this sends a broadcast every 500 ms
 //setInterval(function(){io.emit("news","ping")},500)
-
-
