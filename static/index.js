@@ -93,7 +93,9 @@ jQuery.fn.pop = [].pop;
 jQuery.fn.shift = [].shift;
 //export button
 $BTN.click(function () {
-    scrape_table()
+    data = scrape_table()
+    sendsettings(data) //DS Addition
+
 });
 //ye new code to make it rain
 
@@ -118,9 +120,40 @@ function scrape_table() {
         data.push(h);
     });
 
-    sendsettings(data) //DS Addition
+    return data
 
 }
+
+function compare_tables()
+{
+    this_table = scrape_table()
+    //for (row in this_table)setbackground(this_table[row]['run'],"none")
+
+    for (row in this_table)
+    {
+
+        a = this_table[row]
+        b = table_on_server[row]
+        for (k in b)
+        {
+            if (a[k] != b[k]) setbackground(a['run'],'yellow')
+        }
+
+    }
+    for (j =  table_on_server.length; j < this_table.length; j++)
+    {
+        console.log("extra row")
+    }
+
+    for (j =  this_table.length; j < table_on_server.length; j++)
+    {
+        console.log("missing rows")
+    }
+
+
+}
+
+table_on_server = undefined
 
 //Basic data read library
 function loadsettings() {
@@ -135,6 +168,7 @@ function loadsettings() {
         for (d in data) {
             makerow(data[d])
         }
+        table_on_server = data
     })
 }
 
@@ -165,7 +199,7 @@ function sendsettings(setobj) {
         // Output the result
         //json_str = JSON.stringify(out)
     $.post("/table_save", out, function (data) {
-        $("#updates").text("table save status: " + data['success'])
+        $("#updates").text("table save status: " + data['success']);
     })
 }
 
@@ -231,18 +265,6 @@ $TABLE.keyup(function (data) {
 })
 
 old_html = ""
-setInterval(
-    function () {
-        if (old_html == $("#updates").text() & old_html != "") {
-            $("#updates").fadeOut(500, function () {
-                $("#updates").text("")
-            })
-            $("#updates").fadeIn(1)
-
-        }
-        old_html = $("#updates").text()
-    }, 1000)
-
 
 
 //Single Shot Handling Code
@@ -270,7 +292,6 @@ socket.on('update', function (data) {
 socket.on('singleshot',
     function (data) {
         h = data
-        console.log(data)
         ins = "<div style='text-align:right; vertical-align:middle;'><span class='inlinespark'></span></div>"
             //$("#status").html(ins)
         $("tr[run='" + h['run'] + "'] td[kind='LastWaveform']").html(ins)
@@ -301,12 +322,14 @@ socket.on('queuestatus',
 
 
 $("#queue-btn").click(function () {
-    scrape_table()
 
-    if (qs['queuer_on'] == false) $.post("/queue_state/", {
-        'querer_on': true
-    })
-    else $.post("/queue_state/", {
-        'querer_on': false
-    })
+    if (qs['queuer_on'] == false) {
+            d = scrape_table()
+            $.when(sendsettings(d)).done($.post("/queue_state/", {'querer_on': true}))
+    }
+
+    else {
+        $("#queue-btn").html("Queue Stopping")
+        $.post("/queue_state/", {'querer_on': false})}
+
 })

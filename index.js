@@ -178,7 +178,7 @@ function end_shot(msg) {
 
         //Then push to the db
         try {
-            db.collection("acoustic_data").insert(msg)
+            db.collection("acoustic_data_fast_test").insert(msg)
         } catch (e) {
             console.log(e)
         }
@@ -192,8 +192,7 @@ function end_shot(msg) {
 
 function save_table(msg) {
     fn = "settings_table.json"
-    jsonfile.writeFileSync(fn, msg)
-    msg['success'] = true
+     msg['success'] = true
     return msg
 }
 
@@ -283,8 +282,9 @@ app.get('/table_load/', function (req, res) {
 
 app.post('/queue_state/', function (req, res) {
     state = req.body
-
+    msg_queue = load_table() //reload table for fun and profit
     //da fuq JSON?  No sending booleans?
+
     if (state['querer_on'] == 'false') queuer_on = false
     if (state['querer_on'] == 'true') queuer_on = true
 });
