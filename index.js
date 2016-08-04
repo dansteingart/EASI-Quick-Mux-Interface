@@ -192,7 +192,8 @@ function end_shot(msg) {
 
 function save_table(msg) {
     fn = "settings_table.json"
-     msg['success'] = true
+    msg = jsonfile.writeFileSync(fn,msg)
+    msg['success'] = true
     return msg
 }
 
