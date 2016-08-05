@@ -237,6 +237,7 @@ app.use('/fonts', express.static('fonts'));
 app.post("/singleshot/", function (req, res) {
     queuer_on = false;
     mm = req.body
+    mm['single_shot'] = true
     queue_state["single_shot"] = "yes"
     queue_state['current_run'] = mm['run']
 
