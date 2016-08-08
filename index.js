@@ -22,38 +22,45 @@ source = "mac_mini_129_2"
 inid = "mux1"
 db = mongojs(mongo + "/test_db")
 
+function srequest(ssite)
+{
+    try{return request(ssite)}
+    catch(e){queuer_on =false;queue_state['error']=e}
+}
+
 //Define Functions
 function write_mux(msg) {
     wsite = mux_site + "/write/" + msg
-    var res = request(wsite);
+    var res = srequest(wsite);
     sleep.usleep(50000);
+
     return res['data'].toString()
 }
 
 function write_pulser(msg) {
     wsite = pulser_site + "/writecf/" + msg
-    var res = request(wsite);
+    var res = srequest(wsite);
     sleep.usleep(50000);
     return res['data'].toString()
 }
 
 function read_pulser() {
     rsite = pulser_site + "/read/"
-    var res = request(rsite);
+    var res = srequest(rsite);
     //get last datapoimt
     return res['data'].toString().split("\r\n").slice(-3, -2)[0];
 }
 
 function check_pulser_ok() {
     rsite = pulser_site + "/read/"
-    var res = request(rsite);
+    var res = srequest(rsite);
     foo = res['data'].toString().slice(-4)
     return foo == "OK\r\n";
 }
 
 function read_mux() {
     rsite = mux_site + "/read/"
-    var res = request(rsite);
+    var res = srequest(rsite);
     //get last element
     return res['data'].toString().split("\n").slice(-3, -2)[0];
 }
@@ -310,6 +317,13 @@ io.on('connection', function (socket) {
 
 msg_queue = load_table()
 
+function start_over()
+{
+    queuer_on=false;
+    mux_queue_ready=true;
+    queue_state['current_run'] = undefined;
+    queue_position=0;
+}
 
 var queuer_on = false
 var mux_queue_ready = true
@@ -320,17 +334,23 @@ queue_position = 0;
 setInterval(
     function () {
         queue_state['queuer_on'] = queuer_on
-        queue_state['run'] == ""
         if (queuer_on && mux_queue_ready) {
+            queue_state['status'] = undefined
             //recall message here == increment if need be
             total_rows = msg_queue['data'].length
             if (queue_position >= total_rows) queue_position = 0;
             msg = msg_queue['data'][queue_position]
             queue_position++;
             queue_state['current_run'] = msg['run']
-            start_shot(msg)
+            try{start_shot(msg)}
+            catch(e){
+                console.log(e);
+                start_over();
+                error = e+" (excellent chance one of the hardware connections is bad)"
+                console.log(error)
+                queue_state['status'] = error
+            }
         }
-
         fire_queue_status()
     }, 500)
 
