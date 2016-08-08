@@ -33,7 +33,7 @@ if (pulser_site == "" | mux_site == "" | source=="") {console.log("need to set t
 
 collection= source
 
-if (mux_site == "none"){mux_port==undefined}
+if (mux_site == "none") mux_site=undefined
 
 mongo = "192.81.219.77"
 db = mongojs(mongo + "/test_db")
