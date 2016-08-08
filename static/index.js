@@ -1,6 +1,8 @@
 //Make Header (just edit to change structure of table, nothing else needs to be changed in this file)
 var allhead = "Name(unique to the cell),TransmissionMode(TR/PE),Channel1(PE Channel),Channel2(TR Channel),BaseGain(dB),Delay(us),Range(us),Freq(MHz),ResponsibleParty(Initials),Notes,CyclerCode,FilterStandard,LastWaveform,Run?(Y/N)"
 
+//Need to make arguments, get rid of ports on interface (bad news waiting to happen)
+
 //Collect Elements to Play with Later
 var $TABLE = $('#table');
 var $BTN = $('#export-btn');
