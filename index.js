@@ -33,6 +33,7 @@ if (pulser_site == "" | mux_site == "" | source=="") {console.log("need to set t
 
 collection= source
 
+if (mux_site == "none"){mux_port==undefined}
 
 mongo = "192.81.219.77"
 db = mongojs(mongo + "/test_db")
@@ -115,7 +116,7 @@ function start_shot(msg) {
     mux_queue_ready = false
     msg['source'] = source
     if (msg['Run?'].toLowerCase() == 'y') {
-        mux_commander(msg);
+        if (mux_site != undefined) mux_commander(msg);
         msg['_id'] = parseInt(Date.now() / 1000)
         msg = epoch_commander(msg);
 
