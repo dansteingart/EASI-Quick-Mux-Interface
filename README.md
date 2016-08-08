@@ -14,6 +14,8 @@ A basic interface for the pulser receiver/mux comabination.  Table based format.
 ### Remainders:
 - Remove Hard Coding
  - DB
+- Interface
+ - Move Port Settings from Interface to Command line per https://feasible-io.slack.com/archives/code/p1470346545001642
 - Server:
  - Socket.IO - Done
  - async on get_waveform - Done
