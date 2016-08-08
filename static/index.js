@@ -1,5 +1,5 @@
 //Make Header (just edit to change structure of table, nothing else needs to be changed in this file)
-var allhead = "Name(unique to the cell),TransmissionMode(TR/PE),Channel1(PE Channel),Channel2(TR Channel),BaseGain(dB),Delay(us),Range(us),Freq(MHz),Notes,CyclerCode,FilterStandard,LastWaveform,Run?(Y/N)"
+var allhead = "Name(unique to the cell),TransmissionMode(TR/PE),Channel1(PE Channel),Channel2(TR Channel),BaseGain(dB),Delay(us),Range(us),Freq(MHz),ResponsibleParty,Notes,CyclerCode,FilterStandard,LastWaveform,Run?(Y/N)"
 
 //Collect Elements to Play with Later
 var $TABLE = $('#table');
