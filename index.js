@@ -14,12 +14,27 @@ var jsonfile = require('jsonfile')
 var mongojs = require('mongojs')
 var fs = require("fs")
 
-//Replace Later with ARGV and in browser changes
+
+args = process.argv;
+
+pulser_site = ""
+mux_site = ""
+source = ""
+
+for (a in args)
+{
+    setting = args[a].split("=")
+    if (setting[0] == "pulser_site")       pulser_site = setting.slice(-1)[0]
+    else if (setting[0] == "mux_site")     mux_site = setting.slice(-1)[0]
+    else if (setting[0] == "source")       source = setting.slice(-1)[0]
+}
+
+if (pulser_site == "" | mux_site == "" | source=="") {console.log("need to set the source, mux_site, and pulser_site");process.exit()}
+
+collection= source
+
+
 mongo = "192.81.219.77"
-pulser_site = "http://25.133.238.121:9003"
-mux_site = "http://25.133.238.121:9002"
-source = "mac_mini_129_2"
-inid = "mux1"
 db = mongojs(mongo + "/test_db")
 
 function srequest(ssite)
@@ -99,7 +114,6 @@ function start_shot(msg) {
     fire_queue_status()
     mux_queue_ready = false
     msg['source'] = source
-    msg['inid'] = inid
     if (msg['Run?'].toLowerCase() == 'y') {
         mux_commander(msg);
         msg['_id'] = parseInt(Date.now() / 1000)
@@ -185,7 +199,7 @@ function end_shot(msg) {
 
         //Then push to the db
         try {
-            db.collection("acoustic_data_fast_test").insert(msg)
+            db.collection(collection).insert(msg)
         } catch (e) {
             console.log(e)
         }
@@ -207,13 +221,9 @@ function save_table(msg) {
 function load_table() {
     fn = "settings_table.json"
     msg = jsonfile.readFileSync(fn)
-    source = msg['source_port']
-
-    if (msg['pulser_port'].search(":") == -1) pulser_site = "http://localhost:" + msg['pulser_port']
-    else pulser_site = msg['pulser_port']
-
-    if (msg['mux_port'].search(":") == -1) mux_site = "http://localhost:" + msg['mux_port']
-    else mux_site = msg['mux_port']
+    console.log(pulser_site)
+    if (pulser_site.search(":") == -1)  pulser_site = "http://localhost:" + pulser_site
+    if (mux_site.search(":") == -1)     mux_site = "http://localhost:" + mux_site
 
 
     return msg
