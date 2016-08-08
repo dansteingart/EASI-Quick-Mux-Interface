@@ -2,6 +2,8 @@
 
 A basic interface for the pulser receiver/mux comabination.  Table based format.
 
+
+
 ### Install/Start
 
 - Download it.
@@ -10,7 +12,8 @@ A basic interface for the pulser receiver/mux comabination.  Table based format.
 - chill.
 
 ### Remainders:
-
+- Remove Hard Coding
+ - DB
 - Server:
  - Socket.IO - Done
  - async on get_waveform - Done
