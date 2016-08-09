@@ -225,7 +225,6 @@ function save_table(msg) {
 function load_table() {
     fn = "settings_table.json"
     msg = jsonfile.readFileSync(fn)
-    console.log(pulser_site)
     if (pulser_site.search(":") == -1)  pulser_site = "http://localhost:" + pulser_site
     try{if (mux_site.search(":") == -1)     mux_site = "http://localhost:" + mux_site}
     catch(e){console.log("Hey Dan You Jerk This Is The Mux Port Error You Should Fix")}

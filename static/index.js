@@ -1,5 +1,5 @@
 //Make Header (just edit to change structure of table, nothing else needs to be changed in this file)
-var allhead = "Name(unique to the cell),TransmissionMode(TR/PE),Channel1(PE Channel),Channel2(TR Channel),BaseGain(dB),Delay(us),Range(us),Freq(MHz),ResponsibleParty(Initials),Notes,CyclerCode,FilterStandard,LastWaveform,Run?(Y/N)"
+var allhead = "Name(unique to the cell),TransmissionMode<PE|TR>,Channel1(PE Channel),Channel2(TR Channel),BaseGain(dB),Delay(us),Range(us),Freq(MHz),ResponsibleParty(Initials),Notes,CyclerCode,FilterStandard,LastWaveform,Run?<N|Y>"
 
 //Need to make arguments, get rid of ports on interface (bad news waiting to happen)
 
@@ -11,7 +11,7 @@ var $EXPORT = $('#export');
 
 //Just the headers
 fields = allhead.split(",")
-for (f in fields) fields[f] = fields[f].replace(/\s+/g, "").replace(/\(.*?\)/g, "")
+for (f in fields) fields[f] = fields[f].replace(/\s+/g, "").replace(/\(.*?\)/g, "").replace(/\<.*?\>/g, "")
 fields.push("")
 fields.push("")
 fields.push("")
@@ -31,6 +31,19 @@ for (t in tips) {
 tips.push("(Single Shot)")
 tips.push("(Delete Row)")
 tips.push("(Move Row)")
+
+//Now just the optionsbox
+options =  allhead.split(",")
+for (o in options) {
+    try {
+        options[o] = options[o].match(/\<.*?\>/g)[0].replace("<","").replace(">","") ///UGH
+    } catch (e) {
+        options[o] = ""
+    }
+}
+options.push("")
+options.push("")
+options.push("")
 
 header = ""
 for (f in fields) header += "<th title='" + tips[f] + "'>" + fields[f] + "</th>"
@@ -58,7 +71,9 @@ cloner = ""
 for (c in clone_arr) {
     var ce = "false"
     if (clone_arr[c] == "") ce = "true"
-    cloner += "<td kind='" + fields[c] + "' contenteditable='" + ce + "' title='" + tips[c] + "'>" + clone_arr[c] + "</td>"
+    filling = clone_arr[c]
+
+    cloner += "<td kind='" + fields[c] + "' contenteditable='" + ce + "' title='" + tips[c] + "'>" + filling + "</td>"
 }
 $("#cloner").html(cloner)
 
@@ -116,7 +131,12 @@ function scrape_table() {
         var h = {};
         // Use the headers from earlier to name our hash keys
         headers.forEach(function (header, i) {
-            h[header] = $td.eq(i).text();
+            try{
+                $select = $td.eq(i).find('select')
+                h[header] = $select.val()
+            }
+            catch (e) {h[header] = $td.eq(i).text();}
+            if (h[header] == undefined) h[header] = $td.eq(i).text();
         });
         h['run'] = $(this)[0].getAttribute('run')
         data.push(h);
@@ -183,7 +203,24 @@ function makerow(p) {
     //get the structure of the row
     var $clone = $TABLE.find('tr.hide').clone(true).removeClass('hide table-line');
     //fill in the row with values
-    for (var i = 0; i < fields.length - 3; i++) $clone[0].cells[i].innerHTML = p[fields[i]]
+    for (var i = 0; i < fields.length - 3; i++)
+    {
+        filling = p[fields[i]]
+        if (options[i].split("|").length > 1)
+        {
+            setting = filling
+            opts = options[i].split("|")
+            filling = "<select>"
+            for (o in opts)
+            {
+                selected = ""
+                if (setting == opts[o]) selected = "selected"
+                filling += "<option "+ selected + " value='"+opts[o]+"'>"+opts[o]+"</option>"
+            }
+            filling += "</select>"
+        }
+        $clone[0].cells[i].innerHTML = filling
+    }
         //append the row to the table
     $clone[0].setAttribute('run', p['run'])
     $TABLE.find('table').append($clone);
