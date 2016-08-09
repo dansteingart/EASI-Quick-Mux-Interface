@@ -160,17 +160,20 @@ function get_waveform(msg) {
     write_pulser("param_WaveForm?");
     watchdog = 0
     output = false
+    ticker = 200 //ms between checks
+    time_me_out = 10 //seconds
+    ticks_till_time_me_out = time_me_out*1000/ticker
     sleep.usleep(100000)
     async.whilst(
         function testCondition() {
-            return !output && watchdog < 20;
+            return !output && watchdog < ticks_till_time_me_out;
         },
         function increaseCounter(callback) {
             watchdog++;
             output = check_pulser_ok()
                 //console.log("watchdog: "+watchdog);
                 //callback must be called once this function has completed, it takes an optional error argument
-            setTimeout(callback, 200);
+            setTimeout(callback, ticker);
         },
         function callback(err) {
             if (err) {
