@@ -33,10 +33,10 @@ tips.push("(Delete Row)")
 tips.push("(Move Row)")
 
 //Now just the optionsbox
-options =  allhead.split(",")
+options = allhead.split(",")
 for (o in options) {
     try {
-        options[o] = options[o].match(/\<.*?\>/g)[0].replace("<","").replace(">","") ///UGH
+        options[o] = options[o].match(/\<.*?\>/g)[0].replace("<", "").replace(">", "") ///UGH
     } catch (e) {
         options[o] = ""
     }
@@ -131,11 +131,12 @@ function scrape_table() {
         var h = {};
         // Use the headers from earlier to name our hash keys
         headers.forEach(function (header, i) {
-            try{
+            try {
                 $select = $td.eq(i).find('select')
                 h[header] = $select.val()
+            } catch (e) {
+                h[header] = $td.eq(i).text();
             }
-            catch (e) {h[header] = $td.eq(i).text();}
             if (h[header] == undefined) h[header] = $td.eq(i).text();
         });
         h['run'] = $(this)[0].getAttribute('run')
@@ -146,29 +147,24 @@ function scrape_table() {
 
 }
 
-function compare_tables()
-{
+function compare_tables() {
     this_table = scrape_table()
-    //for (row in this_table)setbackground(this_table[row]['run'],"none")
+        //for (row in this_table)setbackground(this_table[row]['run'],"none")
 
-    for (row in this_table)
-    {
+    for (row in this_table) {
 
         a = this_table[row]
         b = table_on_server[row]
-        for (k in b)
-        {
-            if (a[k] != b[k]) setbackground(a['run'],'yellow')
+        for (k in b) {
+            if (a[k] != b[k]) setbackground(a['run'], 'yellow')
         }
 
     }
-    for (j =  table_on_server.length; j < this_table.length; j++)
-    {
+    for (j = table_on_server.length; j < this_table.length; j++) {
         console.log("extra row")
     }
 
-    for (j =  this_table.length; j < table_on_server.length; j++)
-    {
+    for (j = this_table.length; j < table_on_server.length; j++) {
         console.log("missing rows")
     }
 
@@ -203,25 +199,22 @@ function makerow(p) {
     //get the structure of the row
     var $clone = $TABLE.find('tr.hide').clone(true).removeClass('hide table-line');
     //fill in the row with values
-    for (var i = 0; i < fields.length - 3; i++)
-    {
+    for (var i = 0; i < fields.length - 3; i++) {
         filling = p[fields[i]]
-        if (options[i].split("|").length > 1)
-        {
+        if (options[i].split("|").length > 1) {
             setting = filling
             opts = options[i].split("|")
             filling = "<select>"
-            for (o in opts)
-            {
+            for (o in opts) {
                 selected = ""
                 if (setting == opts[o]) selected = "selected"
-                filling += "<option "+ selected + " value='"+opts[o]+"'>"+opts[o]+"</option>"
+                filling += "<option " + selected + " value='" + opts[o] + "'>" + opts[o] + "</option>"
             }
             filling += "</select>"
         }
         $clone[0].cells[i].innerHTML = filling
     }
-        //append the row to the table
+    //append the row to the table
     $clone[0].setAttribute('run', p['run'])
     $TABLE.find('table').append($clone);
 }
@@ -279,13 +272,22 @@ function getlastwave() {
 }
 
 //function to make row id
+get = undefined
+
 function makeid(ll) {
+    get = ll
     parent = ll.target.parentElement
     alltds = parent.children
     run = ""
     URIDH.forEach(function (U, i) {
         part = alltds[i].innerText.replace(/\n/g, "").trim()
-        if (part == "") part = "0"
+        if (part == "") {
+            try {
+                part = alltds[i].children[0].value
+            } catch (e) {
+                part = "0"
+            }
+        }
         run += part + "_"
     })
     run = run.slice(0, -1)
@@ -353,11 +355,13 @@ socket.on('queuestatus',
         clearbackgrounds()
         qs = data
         action = "skipping"
-        for (k in table_on_server) {if (table_on_server[k]['Run?'].search("Y") == 0 && table_on_server[k]['run'] == qs['current_run'] ) action = "running"}
+        for (k in table_on_server) {
+            if (table_on_server[k]['Run?'].search("Y") == 0 && table_on_server[k]['run'] == qs['current_run']) action = "running"
+        }
 
-        if (data['current_run'] != undefined) statusline("Status: Currently "+ action + " " + data['current_run'])
+        if (data['current_run'] != undefined) statusline("Status: Currently " + action + " " + data['current_run'])
         else statusline("Status: Currently not doing anything")
-        if (data['status'] != undefined)statusline("Status: "+data['status'])
+        if (data['status'] != undefined) statusline("Status: " + data['status'])
         setbackground(data['current_run'], 'pink')
         if (data['queuer_on']) $("#queue-btn").text("Queue Running")
         else $("#queue-btn").text("Queue Off")
@@ -367,12 +371,15 @@ socket.on('queuestatus',
 $("#queue-btn").click(function () {
 
     if (qs['queuer_on'] == false) {
-            d = scrape_table()
-            $.when(sendsettings(d)).done($.post("/queue_state/", {'querer_on': true}))
-    }
-
-    else {
+        d = scrape_table()
+        $.when(sendsettings(d)).done($.post("/queue_state/", {
+            'querer_on': true
+        }))
+    } else {
         $("#queue-btn").html("Queue Stopping")
-        $.post("/queue_state/", {'querer_on': false})}
+        $.post("/queue_state/", {
+            'querer_on': false
+        })
+    }
 
 })
