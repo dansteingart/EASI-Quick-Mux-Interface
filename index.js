@@ -116,7 +116,7 @@ function start_shot(msg) {
     mux_queue_ready = false
     msg['source'] = source
     if (msg['Run?'].toLowerCase() == 'y') {
-        if (mux_site != undefined) mux_commander(msg);
+        mux_commander(msg);
         msg['_id'] = parseInt(Date.now() / 1000)
         msg = epoch_commander(msg);
 
