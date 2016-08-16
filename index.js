@@ -103,7 +103,7 @@ function mux_commander(msg) {
 
     if (msg['TransmissionMode'].toLocaleLowerCase == "pe") out = msg['Channel1']
     else if (msg['TransmissionMode'].toLocaleLowerCase == "tr") out = msg['Channel1'] + "," + msg['Channel2']
-
+    console.log(out)
     write_mux(out)
     sleep.usleep(100000)
 }
