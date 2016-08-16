@@ -249,6 +249,7 @@ function sendsettings(setobj) {
         //json_str = JSON.stringify(out)
     $.post("/table_save", out, function (data) {
         $("#updates").text("table save status: " + data['success']);
+        table_on_server = scrape_table();
     })
 }
 
@@ -379,7 +380,9 @@ socket.on('queuestatus',
         if (data['current_run'] != undefined) statusline("Status: Currently " + action + " " + data['current_run'])
         else statusline("Status: Currently not doing anything")
         if (data['status'] != undefined) statusline("Status: " + data['status'])
+
         setbackground(data['current_run'], 'pink')
+
         if (data['queuer_on']) $("#queue-btn").text("Queue Running")
         else $("#queue-btn").text("Queue Off")
     })
