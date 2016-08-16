@@ -227,7 +227,9 @@ function load_table() {
     msg = jsonfile.readFileSync(fn)
     if (pulser_site.search(":") == -1)  pulser_site = "http://localhost:" + pulser_site
     try{if (mux_site.search(":") == -1)     mux_site = "http://localhost:" + mux_site}
-    catch(e){console.log("Hey Dan You Jerk This Is The Mux Port Error You Should Fix")}
+    catch(e){
+        console.log(e);
+        console.log("Hey Dan You Jerk This Is The Mux Port Error You Should Fix")}
 
 
     return msg
