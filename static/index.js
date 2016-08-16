@@ -73,8 +73,25 @@ for (c in clone_arr) {
     if (clone_arr[c] == "") ce = "true"
     filling = clone_arr[c]
 
+    if (options[c].split("|").length > 1) {
+        ce = "false"
+        opts = options[c].split("|")
+        filling = "<select>"
+        for (o in opts) {
+            selected = ""
+            filling += "<option " + selected + " value='" + opts[o] + "'>" + opts[o] + "</option>"
+        }
+            filling += "</select>"
+
+    }
     cloner += "<td kind='" + fields[c] + "' contenteditable='" + ce + "' title='" + tips[c] + "'>" + filling + "</td>"
 }
+
+
+
+
+
+
 $("#cloner").html(cloner)
 
 //Load the data
