@@ -99,10 +99,11 @@ function process_waveform(wave) {
 
 function mux_commander(msg) {
     out = ""
-    write_mux(out)
-
-    if (msg['TransmissionMode'].toLocaleLowerCase == "pe") out = msg['Channel1']
-    else if (msg['TransmissionMode'].toLocaleLowerCase == "tr") out = msg['Channel1'] + "," + msg['Channel2']
+    //write_mux(out)
+    console.log(msg['TransmissionMode'])
+    if (msg['TransmissionMode'] == "PE") out = msg['Channel1']
+    else  out = msg['Channel1'] + "," + msg['Channel2']
+    console.log("this should be here")
     console.log(out)
     write_mux(out)
     sleep.usleep(100000)
