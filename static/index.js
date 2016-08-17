@@ -334,7 +334,35 @@ function statusline(str) {
 
 //Make Sure ID is consistent with settings
 $TABLE.keyup(function (data) {
-    makeid(data)
+    if ((data.keyCode < 37) || (data.keyCode > 40)) makeid(data)
+})
+
+function getpos(foo,dir)
+{
+        col = foo.parent().children().index(foo)
+        rows = foo.parent().parent()//.childen()//.index(foo.parent())
+        test = rows.children()
+        row = test.index(foo.parent())+1
+        col = col+1
+        if (dir == 'up') row = row-1
+        else if (dir == 'down') row = row+1
+        //right now tab and shift-tab to change positions
+//        else if (dir == 'left')
+//        {
+//            if (getCaretPosition(foo) == 0) col = col-1
+//        }
+//        else if (dir == 'right') col = col+1
+        $("#table tr:nth-of-type("+row+") td:nth-of-type("+col+")").focus()
+        return [col,row]
+}
+
+$('td').keydown(function (data) {
+
+    if      (data.keyCode == 37) getpos($(this),'left')
+    else if (data.keyCode == 38) getpos($(this),'up')  //up
+    else if (data.keyCode == 39) getpos($(this),'right')
+    else if (data.keyCode == 40) getpos($(this),'down') //down
+
 })
 
 old_html = ""
