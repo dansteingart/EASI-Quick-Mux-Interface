@@ -337,22 +337,33 @@ $TABLE.keyup(function (data) {
     if ((data.keyCode < 37) || (data.keyCode > 40)) makeid(data)
 })
 
+kickout = undefined
 function getpos(foo,dir)
 {
+        kickout = foo
         col = foo.parent().children().index(foo)
         rows = foo.parent().parent()//.childen()//.index(foo.parent())
         test = rows.children()
         row = test.index(foo.parent())+1
         col = col+1
+        r = row
+        c = col
+        //console.log()
         if (dir == 'up') row = row-1
         else if (dir == 'down') row = row+1
-        //right now tab and shift-tab to change positions
-//        else if (dir == 'left')
-//        {
-//            if (getCaretPosition(foo) == 0) col = col-1
-//        }
-//        else if (dir == 'right') col = col+1
-        $("#table tr:nth-of-type("+row+") td:nth-of-type("+col+")").focus()
+        else if (dir == 'left')
+        {
+            try{if (foo.caret() == 0) col = col-1}
+            catch(e){col=col-1}
+        }
+        else if (dir == 'right')
+        {
+            try{if (foo.caret() == foo.text().length) col = col+1}
+            catch(e){col=col+1}
+        }
+        newfoo = $("#table tr:nth-of-type("+row+") td:nth-of-type("+col+")")
+        newfoo.focus()
+        if ((dir == "left") && (c!=col)) newfoo.caret(newfoo.text().length)
         return [col,row]
 }
 
