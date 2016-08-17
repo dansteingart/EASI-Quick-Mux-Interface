@@ -20,6 +20,7 @@ args = process.argv;
 pulser_site = ""
 mux_site = ""
 source = ""
+mux_type = "barry"
 
 for (a in args)
 {
@@ -27,6 +28,8 @@ for (a in args)
     if (setting[0] == "pulser_site")       pulser_site = setting.slice(-1)[0]
     else if (setting[0] == "mux_site")     mux_site = setting.slice(-1)[0]
     else if (setting[0] == "source")       source = setting.slice(-1)[0]
+    else if (setting[0] == "mux_type")     mux_type = setting.slice(-1)[0]
+
 }
 
 if (pulser_site == "" | mux_site == "" | source=="") {console.log("need to set the source, mux_site, and pulser_site");process.exit()}
@@ -46,7 +49,7 @@ function srequest(ssite)
 
 //Define Functions
 function write_mux(msg) {
-    wsite = mux_site + "/write/" + msg
+    wsite = mux_site + "/writecf/" + msg
     var res = srequest(wsite);
     sleep.usleep(50000);
 
@@ -101,12 +104,23 @@ function mux_commander(msg) {
     out = ""
     //write_mux(out)
     console.log(msg['TransmissionMode'])
-    if (msg['TransmissionMode'] == "PE") out = msg['Channel1']
-    else  out = msg['Channel1'] + "," + msg['Channel2']
-    console.log("this should be here")
-    console.log(out)
-    write_mux(out)
-    sleep.usleep(100000)
+    if (mux_type == "barry")
+    {
+        if (msg['TransmissionMode'] == "PE") out = msg['Channel1']
+        else  out = msg['Channel1'] + "," + msg['Channel2']
+        console.log("this should be here")
+        console.log(out)
+        write_mux(out)
+        sleep.usleep(100000)
+    }
+    else if (mux_type == "cytec")
+    {
+        msg = "C; L "+msg['Channel1'].trim()+"; L "+msg['Channel2'].trim()+"" //don't end with ;
+        write_mux(msg)
+
+        sleep.usleep(100000)
+    }
+
 }
 
 //The async nightmare begins
