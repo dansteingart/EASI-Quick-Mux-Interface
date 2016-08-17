@@ -196,8 +196,9 @@ function get_waveform(msg) {
                 console.log(err);
                 return;
             }
-            write_pulser("param_Freeze=0");
+
             msg['amp'] = process_waveform(read_pulser())[0]
+            write_pulser("param_Freeze=0");
             end_shot(msg)
         }
     );
