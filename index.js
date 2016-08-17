@@ -172,6 +172,7 @@ function epoch_commander(msg) {
 
 //then wait for the wave form.  can take up to 10 seconds so we make this a whilst and chek
 function get_waveform(msg) {
+    write_pulser("param_Freeze=1");
     write_pulser("param_WaveForm?");
     watchdog = 0
     output = false
@@ -195,6 +196,7 @@ function get_waveform(msg) {
                 console.log(err);
                 return;
             }
+            write_pulser("param_Freeze=0");
             msg['amp'] = process_waveform(read_pulser())[0]
             end_shot(msg)
         }
