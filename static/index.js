@@ -276,9 +276,23 @@ function getrowdata(rowid) {
     out = {}
     headers = getheaders()
     tds = $('tr[run="' + rowid + '"]').find("td")
-    for (h in headers) out[headers[h]] = tds.eq(h).text()
+    //for (h in headers) out[headers[h]] = tds.eq(h).text()
+    for (h in headers)
+    {
+        try {
+            $select = tds.eq(h).find('select')
+            out[headers[h]] = $select.val()
+            if (out[headers[h]] == undefined) out[headers[h]] = tds.eq(h).text()
+
+        }
+        catch(e){
+            out[headers[h]] = tds.eq(h).text()
+        }
+
+    }
 
     out['run'] = rowid
+
     return out
 }
 
