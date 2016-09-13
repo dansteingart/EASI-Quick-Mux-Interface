@@ -10,7 +10,7 @@ A basic interface for the pulser receiver/mux comabination.  Table based format.
 - Download it.
 - `node index.js source=HAMACHI_NAME mux_site=MUXPORT pulser_site=PULSERPORT`  
   - if using the cytec add `mux_type=cytec`
-- go to http://localhost:3000 (or whatever your IP is for external viewing/control)
+- go to http://localhost:3000/static (or whatever your IP is for external viewing/control)
 - chill.
 
 ### Remainders
