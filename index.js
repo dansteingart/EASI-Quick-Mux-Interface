@@ -221,6 +221,7 @@ function end_shot(msg) {
 
         //Then push to the db
         try {
+            db = mongojs(mongo + "/test_db")
             db.collection(collection).insert(msg)
         } catch (e) {
             console.log(e)
