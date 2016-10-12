@@ -72,8 +72,13 @@ function read_pulser() {
 
 function check_pulser_ok() {
     rsite = pulser_site + "/read/"
-    var res = srequest(rsite);
-    foo = res['data'].toString().slice(-4)
+    try {
+        var res = srequest(rsite);
+        foo = res['data'].toString().slice(-4)
+    }
+    catch (e) {
+        foo = "";
+    }
     return foo == "OK\r\n";
 }
 
