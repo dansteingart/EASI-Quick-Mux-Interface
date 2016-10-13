@@ -39,7 +39,7 @@ collection= source
 if (mux_site == "none") mux_site=undefined
 
 mongo = "192.81.219.77"
-db = mongojs(mongo + "/test_db")
+//db = mongojs(mongo + "/test_db")
 
 function srequest(ssite)
 {
