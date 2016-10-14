@@ -225,12 +225,9 @@ function end_shot(msg) {
         jsonfile.writeFileSync(fn, msg)
 
         //Then push to the db
-        try {
-            db = mongojs(mongo + "/test_db")
-            db.collection(collection).insert(msg)
-        } catch (e) {
-            console.log(e)
-        }
+        db = mongojs(mongo + "/test_db")
+        db.on('error', function (err) {console.log('couldn not push msg at ', msg['_id'])})
+        db.collection(collection).insert(msg)
     }
     delete queue_state['single_shot']
     delete queue_state['current_run']
