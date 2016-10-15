@@ -22,6 +22,9 @@ mux_site = ""
 source = ""
 mux_type = "barry"
 
+
+mongo = "128.112.72.89"
+
 for (a in args)
 {
     setting = args[a].split("=")
@@ -29,6 +32,7 @@ for (a in args)
     else if (setting[0] == "mux_site")     mux_site = setting.slice(-1)[0]
     else if (setting[0] == "source")       source = setting.slice(-1)[0]
     else if (setting[0] == "mux_type")     mux_type = setting.slice(-1)[0]
+    else if (setting[0] == "mongo")        mongo = setting.slice(-1)[0]
 
 }
 
@@ -38,7 +42,7 @@ collection= source
 
 if (mux_site == "none") mux_site=undefined
 
-mongo = "192.81.219.77"
+//mongo = "192.81.219.77"
 //db = mongojs(mongo + "/test_db")
 
 function srequest(ssite)
