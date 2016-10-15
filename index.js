@@ -43,7 +43,7 @@ collection= source
 if (mux_site == "none") mux_site=undefined
 
 //mongo = "192.81.219.77"
-//db = mongojs(mongo + "/test_db")
+db = mongojs(mongo + "/test_db")
 
 function srequest(ssite)
 {
@@ -229,7 +229,7 @@ function end_shot(msg) {
         jsonfile.writeFileSync(fn, msg)
 
         //Then push to the db
-        db = mongojs(mongo + "/test_db")
+        //db = mongojs(mongo + "/test_db")
         db.on('error', function (err) {console.log('couldn not push msg at ', msg['_id'])})
         db.collection(collection).insert(msg)
     }
