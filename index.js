@@ -159,7 +159,7 @@ function epoch_commander(msg) {
     if (msg['TransmissionMode'].toLowerCase() == "pe") msg['TransmissionMode'] = 0
     else if (msg['TransmissionMode'].toLowerCase() == "tr") msg['TransmissionMode'] = 2
 
-    available = "Freq,Range,TransmissionMode,BaseGain,FilterStandard,Delay"
+    available = "Freq,Range,TransmissionMode,BaseGain,FilterStandard,Delay,Energy"
     //write_pulser("param_Energy=400"); //Turn on energy for transducer
 
     for (k in keys) {
@@ -209,7 +209,7 @@ function get_waveform(msg) {
 
             msg['amp'] = process_waveform(read_pulser())[0]
             write_pulser("param_Freeze=0");
-            //write_pulser("param_Energy=400"); //Turn off pulser to save transducer life
+            write_pulser("param_Energy=0"); //Turn off pulser to save transducer life
 
             end_shot(msg)
         }
