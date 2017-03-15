@@ -1,5 +1,5 @@
 //Make Header (just edit to change structure of table, nothing else needs to be changed in this file)
-var allhead = "Name(unique to the cell),TransmissionMode<PE|TR>,Channel1(PE Channel),Channel2(TR Channel),BaseGain(dB),Delay(us),Range(us),Freq(MHz),FilterStandard,ResponsibleParty(Initials),Notes,CyclerCode,LastWaveform,Run?<N|Y>"
+var allhead = "Name(unique to the cell),TransmissionMode<PE|TR>,Channel1(PE Channel),Channel2(TR Channel),BaseGain(dB),Delay(us),Range(us),Freq(MHz),Energy(V),FilterStandard,ResponsibleParty(Initials),Notes,CyclerCode,LastWaveform,Run?<N|Y>"
 
 //Need to make arguments, get rid of ports on interface (bad news waiting to happen)
 
