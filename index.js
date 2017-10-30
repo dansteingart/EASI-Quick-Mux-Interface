@@ -231,9 +231,8 @@ function end_shot(msg) {
         fn = ddd + "/" + msg['run'] + "_" + msg['_id'] + ".json"
         jsonfile.writeFileSync(fn, msg)
 
-        if 
         //Then push to the db
-        if (mongo == "None")
+        if (mongo != "None")
         {
             db = mongojs(mongo + "/test_db")
             db.on('error', function (err) {console.log('couldn not push msg at ', msg['_id'])})
