@@ -231,16 +231,20 @@ function end_shot(msg) {
         fn = ddd + "/" + msg['run'] + "_" + msg['_id'] + ".json"
         jsonfile.writeFileSync(fn, msg)
 
+        if 
         //Then push to the db
-        db = mongojs(mongo + "/test_db")
-        db.on('error', function (err) {console.log('couldn not push msg at ', msg['_id'])})
-        try
+        if (mongo == "None")
         {
-            db.collection(collection).insert(msg)
-            db.close()
+            db = mongojs(mongo + "/test_db")
+            db.on('error', function (err) {console.log('couldn not push msg at ', msg['_id'])})
+            try
+            {
+                db.collection(collection).insert(msg)
+                db.close()
+             }
+             catch (e){console.log(e)}
+            }
         }
-        catch (e){console.log(e)}
-    }
     delete queue_state['single_shot']
     delete queue_state['current_run']
 
