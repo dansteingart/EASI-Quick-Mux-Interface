@@ -24,7 +24,7 @@ mux_type = "barry"
 
 
 mongo = "spike.princeton.edu"
-
+porter = 3000
 for (a in args)
 {
     setting = args[a].split("=")
@@ -33,7 +33,9 @@ for (a in args)
     else if (setting[0] == "source")       source = setting.slice(-1)[0]
     else if (setting[0] == "mux_type")     mux_type = setting.slice(-1)[0]
     else if (setting[0] == "mongo")        mongo = setting.slice(-1)[0]
+    else if (setting[0] == "port")         porter = setting.slice(-1)[0]
 
+    
 }
 
 if (pulser_site == "" | mux_site == "" | source=="") {console.log("need to set the source, mux_site, and pulser_site");process.exit()}
@@ -351,7 +353,7 @@ app.post('/queue_state/', function (req, res) {
 });
 
 
-server.listen(3000, function () {
+server.listen(porter, function () {
     console.log('Example app listening on port 3000!');
 });
 
